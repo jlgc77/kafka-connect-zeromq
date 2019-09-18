@@ -9,7 +9,7 @@ public class Subscriber {
 
 	public static void main(String args[]) {
 
-		for (int j = 0; j < 10; j++) {
+		for (int j = 0; j < 1; j++) {
 			new Thread(new Runnable() {
 				public void run() {
 					ZMQ.Context context = ZMQ.context(1);

@@ -16,6 +16,11 @@ public class Publisher {
 			String message = "toutiao hello";
 			publisher.send(message.getBytes());
 			System.out.println(ANSI_BLUE + "sent : " + message + ANSI_RESET);
+			try {
+				Thread.sleep(5000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 
 		publisher.close();
