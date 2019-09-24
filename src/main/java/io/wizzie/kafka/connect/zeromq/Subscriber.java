@@ -14,8 +14,8 @@ public class Subscriber {
 				public void run() {
 					ZMQ.Context context = ZMQ.context(1);
 					ZMQ.Socket subscriber = context.socket(ZMQ.SUB);
-					subscriber.connect("tcp://127.0.0.1:5555");
-					subscriber.subscribe("toutiao".getBytes());
+					subscriber.connect("tcp://192.168.223.43:7779");
+					subscriber.subscribe("".getBytes());
 
 					try {
 						while (true) {

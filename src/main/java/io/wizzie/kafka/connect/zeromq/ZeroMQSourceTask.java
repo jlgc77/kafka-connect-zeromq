@@ -62,7 +62,7 @@ public class ZeroMQSourceTask extends SourceTask {
 		context = ZMQ.context(1);
 		
 		subscriber = context.socket(ZMQ.SUB);
-		subscriber.connect("tcp://192.168.1.111:5555");
+		subscriber.connect("tcp://192.168.1.141:5555");
 		subscriber.subscribe("toutiao".getBytes());
 		
 		startSubscriber();
