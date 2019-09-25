@@ -48,8 +48,8 @@ public class SampleAleFeedReader {
 			System.out.println("Entidad >>> ");
 //			System.out.println(item);
 			System.out.println("Mac address client >>> ");
-			System.out.println(item.getStaEthMac());
-			System.out.println(item.getHashedStaEthMac());
+//			System.out.println(item.getStaEthMac());
+//			System.out.println(item.getHashedStaEthMac());
 			String sta_eth_mac = byteStringToStringForMac(item.getHashedStaEthMac());
 			System.out.println(sta_eth_mac);
 			System.out.println("Fin mac >>> ");
