@@ -9,6 +9,7 @@ import org.zeromq.ZMQ.Socket;
 import com.google.common.primitives.Bytes;
 import com.google.protobuf.ByteString;
 
+import io.wizzie.kafka.connect.zeromq.model.Schema.location;
 import io.wizzie.kafka.connect.zeromq.model.Schema.nb_event;
 import io.wizzie.kafka.connect.zeromq.model.Schema.proximity;
 
@@ -20,8 +21,8 @@ public class SampleAleFeedReader {
 		Socket socket = context.socket(ZMQ.SUB);
 		socket.connect("tcp://192.168.223.43:7779");
 		// subscribe to all available topics
-//		socket.subscribe("".getBytes());
-		socket.subscribe("proximity".getBytes());
+		socket.subscribe("".getBytes());
+//		socket.subscribe("proximity".getBytes());
 //		socket.subscribe("presence".getBytes());
 
 		byte[] currByte = null;
@@ -30,29 +31,43 @@ public class SampleAleFeedReader {
 		while (!Thread.currentThread().isInterrupted()) {
 			currentAddress = socket.recvStr(0);
 			currByte = socket.recv(0);
+			System.out.println("CurrentAdress es >>> " + currentAddress);
 
 			while (socket.hasReceiveMore()) {
-				System.out.println("multi-part zmq message ");
+				System.out.println("Entro en while del socker");
 				byte[] moreBytes = socket.recv(0);
 				currByte = Bytes.concat(currByte, moreBytes);
 			}
 
 			nb_event evento = nb_event.parseFrom(currByte);
-//			System.out.println("EVENTO >>> ");
 //			System.out.println(evento);
+			if (evento.getPresence() != null) {
+//				System.out.println("es presence");
+			} else if (evento.getProximity() != null) {
+//				System.out.println("es proximity");
+			} else if (evento.getLocation() != null) {
+				System.out.println("es location");
+				location location = evento.getLocation();
+				System.out.println("latitude >> " + location.getLatitude());
+				System.out.println("longitude >>" + location.getLongitude());
+			} else {
+//				System.out.println("es otro");
+			}
 
 			/**
 			 * Datos proximity
 			 */
-			proximity item = proximity.parseFrom(currByte);
-			System.out.println("Entidad >>> ");
+//			proximity item = proximity.parseFrom(currByte);
+//			System.out.println("Entidad >>> ");
 //			System.out.println(item);
-			System.out.println("Mac address client >>> ");
+//			System.out.println("Mac address client >>> ");
 //			System.out.println(item.getStaEthMac());
 //			System.out.println(item.getHashedStaEthMac());
-			String sta_eth_mac = byteStringToStringForMac(item.getHashedStaEthMac());
-			System.out.println(sta_eth_mac);
-			System.out.println("Fin mac >>> ");
+//			String sta_eth_mac = byteStringToStringForMac(item.getHashedStaEthMac());
+//			String sta_eth_mac_utf8 = item.getHashedStaEthMac().toStringUtf8();
+//			System.out.println(sta_eth_mac);
+//			System.out.println(sta_eth_mac_utf8);
+//			System.out.println("Fin mac >>> ");
 		}
 	}
 
