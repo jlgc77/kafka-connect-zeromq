@@ -1,17 +1,17 @@
 package io.wizzie.kafka.connect.zeromq;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.Context;
-import org.zeromq.ZMQ.Socket;
 
 import com.google.common.primitives.Bytes;
 import com.google.protobuf.ByteString;
@@ -27,7 +27,7 @@ public class ZeroMQSourceTask extends SourceTask {
 	private static Logger log = LoggerFactory.getLogger(ZeroMQSourceTask.class);
 
 	private String topic = null;
-	private ZMQ.Socket subscriber = null;
+	private ZMQ.Socket socket = null;
 	private ZMQ.Context context = null;
 	private BlockingQueue<ZeroMQMessageProcessor> wQueue = new LinkedBlockingQueue<>();
 	private boolean isRunning = true;
@@ -41,23 +41,20 @@ public class ZeroMQSourceTask extends SourceTask {
 
 	private void startSubscriber() {
 		log.info("Starting subscriber");
-		Context context = ZMQ.context(1);
-
-		Socket socket = context.socket(ZMQ.SUB);
-		socket.connect("tcp://192.168.223.43:7779");
-		// subscribe to all available topics
-		socket.subscribe("".getBytes());
-//		socket.subscribe("proximity".getBytes());
-//		socket.subscribe("presence".getBytes());
+//		Context context = ZMQ.context(1);
+//		Socket socket = context.socket(ZMQ.SUB);
+//		socket.connect("tcp://192.168.223.43:7779");
+//		socket.subscribe("".getBytes());
 
 		byte[] currByte = null;
-		String currentAddress = null;
-		nb_event evento = null;
+		String typeEvent = null;
+		nb_event event = null;
+		String tipo = null;
 
 		while (!Thread.currentThread().isInterrupted()) {
-			currentAddress = socket.recvStr(0);
+			typeEvent = socket.recvStr(0);
 			currByte = socket.recv(0);
-			// System.out.println("CurrentAdress es >>> " + currentAddress);
+			System.out.println("Event Type >>> " + typeEvent);
 
 			while (socket.hasReceiveMore()) {
 				System.out.println("Entro en while del socker");
@@ -66,26 +63,38 @@ public class ZeroMQSourceTask extends SourceTask {
 			}
 
 			try {
-				evento = nb_event.parseFrom(currByte);
+				event = nb_event.parseFrom(currByte);
 			} catch (InvalidProtocolBufferException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			if (evento.getPresence() != null) {
-				System.out.println("es presence");
-				presence presence = evento.getPresence();
-				System.out.println("es presence to strig  >> " + presence.toString());
-			} else if (evento.getProximity() != null) {
-				System.out.println("es proximity");
-				proximity proximity = evento.getProximity();
-				System.out.println("es proximity to strig  >> " + proximity.toString());
-			} else if (evento.getLocation() != null) {
-				System.out.println("es location");
-				location location = evento.getLocation();
-				System.out.println("latitude >> " + location.getLatitude());
-				System.out.println("longitude >>" + location.getLongitude());
+			if (event.getPresence() != null) {
+//				System.out.println("es presence");
+//				presence presence = event.getPresence();
+//				System.out.println("es presence to strig  >> " + presence.toString());
+				tipo = "presence";
+			} else if (event.getProximity() != null) {
+//				System.out.println("es proximity");
+//				proximity proximity = event.getProximity();
+//				System.out.println("es proximity to strig  >> " + proximity.toString());
+				tipo = "proximity";
+			} else if (event.getLocation() != null) {
+//				System.out.println("es location");
+//				location location = event.getLocation();
+//				System.out.println("latitude >> " + location.getLatitude());
+//				System.out.println("longitude >>" + location.getLongitude());
+				tipo = "location";
 			} else {
-				System.out.println("es otro");
+//				System.out.println("es otro");
+				tipo = "otro";
+			}
+			try {
+				System.out.println("Mando al topic el tipo >>> " + tipo);
+				wQueue.put(zeroMQSourceConnectorConfig
+						.getConfiguredInstance("message_processor_class", ZeroMQMessageProcessor.class)
+						.process(topic, new ZeroMQMessage(topic, tipo)));
+				System.out.println("Fin >>> " + tipo);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 		}
 
@@ -109,14 +118,13 @@ public class ZeroMQSourceTask extends SourceTask {
 
 		topic = props.get(ZeroMQSourceConnector.TOPIC_CONFIG);
 
-//		context = ZMQ.context(1);
+		context = ZMQ.context(1);
+		socket = context.socket(ZMQ.SUB);
+		socket.connect("tcp://192.168.223.43:7779");
+		socket.subscribe("".getBytes());
 
-//		subscriber = context.socket(ZMQ.SUB);
 //		subscriber.connect("tcp://192.168.1.141:5555");
 //		subscriber.subscribe("toutiao".getBytes());
-
-//		subscriber.connect("tcp://192.168.223.43:7779");
-//		subscriber.subscribe("proximity".getBytes());
 
 		startSubscriber();
 	}
@@ -133,7 +141,7 @@ public class ZeroMQSourceTask extends SourceTask {
 	@Override
 	public void stop() {
 		isRunning = false;
-		subscriber.close();
+		socket.close();
 		context.term();
 	}
 }
