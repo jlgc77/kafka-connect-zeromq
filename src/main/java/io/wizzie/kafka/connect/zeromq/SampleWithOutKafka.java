@@ -13,7 +13,7 @@ import io.wizzie.kafka.connect.zeromq.model.Schema.location;
 import io.wizzie.kafka.connect.zeromq.model.Schema.nb_event;
 import io.wizzie.kafka.connect.zeromq.model.Schema.proximity;
 
-public class SampleAleFeedReader {
+public class SampleWithOutKafka {
 
 	public static void main(String[] args) throws IOException {
 		Context context = ZMQ.context(1);
@@ -21,7 +21,7 @@ public class SampleAleFeedReader {
 		Socket socket = context.socket(ZMQ.SUB);
 		socket.connect("tcp://192.168.223.43:7779");
 		// subscribe to all available topics
-		socket.subscribe("".getBytes());
+		socket.subscribe("location".getBytes());
 //		socket.subscribe("proximity".getBytes());
 //		socket.subscribe("presence".getBytes());
 
@@ -41,15 +41,15 @@ public class SampleAleFeedReader {
 
 			nb_event evento = nb_event.parseFrom(currByte);
 //			System.out.println(evento);
-			if (evento.getPresence() != null) {
+			if (currentAddress.equalsIgnoreCase("presence")) {
 //				System.out.println("es presence");
-			} else if (evento.getProximity() != null) {
+			} else if (currentAddress.equalsIgnoreCase("proximity")) {
 //				System.out.println("es proximity");
-			} else if (evento.getLocation() != null) {
+			} else if (currentAddress.equalsIgnoreCase("location")) {
 				System.out.println("es location");
 				location location = evento.getLocation();
-				System.out.println("latitude >> " + location.getLatitude());
-				System.out.println("longitude >>" + location.getLongitude());
+				System.out.println("latitude >> " + location.getStaLocationX());
+				System.out.println("longitude >>" + location.getStaLocationY());
 			} else {
 //				System.out.println("es otro");
 			}
