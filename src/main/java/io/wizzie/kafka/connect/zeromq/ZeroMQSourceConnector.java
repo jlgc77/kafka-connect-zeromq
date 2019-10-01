@@ -20,11 +20,14 @@ import org.apache.kafka.connect.source.SourceConnector;
  */
 public class ZeroMQSourceConnector extends SourceConnector {
 	public static final String TOPIC_CONFIG = "topic";
+	public static final String SERVER = "server";
 
-	private static final ConfigDef CONFIG_DEF = new ConfigDef().define(TOPIC_CONFIG, Type.LIST, Importance.HIGH,
-			"The topic to publish data to");
+	private static final ConfigDef CONFIG_DEF = new ConfigDef()
+			.define(TOPIC_CONFIG, Type.LIST, Importance.HIGH, "The topic to publish data to")
+			.define(SERVER, Type.STRING, Importance.HIGH, "The server to Aruba");
 
 	private String topic;
+	private String server;
 
 	@Override
 	public String version() {
@@ -40,6 +43,7 @@ public class ZeroMQSourceConnector extends SourceConnector {
 					"'topic' in ZeroMQSourceConnector configuration requires definition of a single topic");
 		}
 		topic = topics.get(0);
+		server = parsedConfig.getString(SERVER);
 	}
 
 	@Override
@@ -50,9 +54,9 @@ public class ZeroMQSourceConnector extends SourceConnector {
 	@Override
 	public List<Map<String, String>> taskConfigs(int maxTasks) {
 		ArrayList<Map<String, String>> configs = new ArrayList<>();
-		// Only one input stream makes sense.
 		Map<String, String> config = new HashMap<>();
 		config.put(TOPIC_CONFIG, topic);
+		config.put(SERVER, server);
 		configs.add(config);
 		return configs;
 	}
