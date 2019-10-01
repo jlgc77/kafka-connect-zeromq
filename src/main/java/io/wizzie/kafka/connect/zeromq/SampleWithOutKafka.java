@@ -6,12 +6,13 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.Socket;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.primitives.Bytes;
 import com.google.protobuf.ByteString;
 
+import io.wizzie.kafka.connect.zeromq.data.LocationData;
 import io.wizzie.kafka.connect.zeromq.model.Schema.location;
 import io.wizzie.kafka.connect.zeromq.model.Schema.nb_event;
-import io.wizzie.kafka.connect.zeromq.model.Schema.proximity;
 
 public class SampleWithOutKafka {
 
@@ -32,6 +33,7 @@ public class SampleWithOutKafka {
 			currentAddress = socket.recvStr(0);
 			currByte = socket.recv(0);
 			System.out.println("CurrentAdress es >>> " + currentAddress);
+			LocationData locationData = new LocationData();
 
 			while (socket.hasReceiveMore()) {
 				System.out.println("Entro en while del socker");
@@ -48,8 +50,13 @@ public class SampleWithOutKafka {
 			} else if (currentAddress.equalsIgnoreCase("location")) {
 				System.out.println("es location");
 				location location = evento.getLocation();
-				System.out.println("latitude >> " + location.getStaLocationX());
-				System.out.println("longitude >>" + location.getStaLocationY());
+//				System.out.println("latitude >> " + location.getStaLocationX());
+//				System.out.println("longitude >>" + location.getStaLocationY());
+				locationData.setX(location.getStaLocationX());
+				locationData.setY(location.getStaLocationY());
+				ObjectMapper objectMapper = new ObjectMapper();
+				String json = objectMapper.writeValueAsString(locationData);
+				System.out.println(json);
 			} else {
 //				System.out.println("es otro");
 			}

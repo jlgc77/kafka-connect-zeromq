@@ -1,9 +1,10 @@
 package io.wizzie.kafka.connect.zeromq;
 
 public class ZeroMQMessage {
-	private String topic, message;
+	private String topic;
+	private Object message;
 
-	public ZeroMQMessage(String topic, String message) {
+	public ZeroMQMessage(String topic, Object message) {
 		this.topic = topic;
 		this.message = message;
 	}
@@ -12,7 +13,7 @@ public class ZeroMQMessage {
 		return topic;
 	}
 
-	public String getMessage() {
+	public Object getMessage() {
 		return message;
 	}
 }

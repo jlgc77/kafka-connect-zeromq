@@ -13,16 +13,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.ZMQ;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.primitives.Bytes;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import io.wizzie.kafka.connect.zeromq.data.LocationData;
+import io.wizzie.kafka.connect.zeromq.model.Schema.location;
 import io.wizzie.kafka.connect.zeromq.model.Schema.nb_event;
-import io.wizzie.kafka.connect.zeromq.model.Schema.proximity;
 
 public class ZeroMQSourceTask extends SourceTask {
 
 	private static Logger log = LoggerFactory.getLogger(ZeroMQSourceTask.class);
+	private final static String LOCATION = "location";
 
 	private String topic = null;
 	private ZMQ.Socket subscriber = null;
@@ -48,6 +52,8 @@ public class ZeroMQSourceTask extends SourceTask {
 				while (isRunning) {
 					typeEvent = subscriber.recvStr(0);
 					currByte = subscriber.recv(0);
+					LocationData locationData = new LocationData();
+
 					System.out.println("Event Type >>> " + typeEvent);
 
 					while (subscriber.hasReceiveMore()) {
@@ -61,36 +67,25 @@ public class ZeroMQSourceTask extends SourceTask {
 					} catch (InvalidProtocolBufferException e) {
 						e.printStackTrace();
 					}
-					if (event.getPresence() != null) {
-//						System.out.println("es presence");
-//						presence presence = event.getPresence();
-//						System.out.println("es presence to strig  >> " + presence.toString());
-						tipo = "presence";
-					} else if (event.getProximity() != null) {
-//						System.out.println("es proximity");
-//						proximity proximity = event.getProximity();
-//						System.out.println("es proximity to strig  >> " + proximity.toString());
-						tipo = "proximity";
-					} else if (event.getLocation() != null) {
-//						System.out.println("es location");
-//						location location = event.getLocation();
-//						System.out.println("latitude >> " + location.getLatitude());
-//						System.out.println("longitude >>" + location.getLongitude());
-						tipo = "location";
-					} else {
-//						System.out.println("es otro");
-						tipo = "otro";
-					}
-					try {
-						System.out.println("Mando al topic el tipo >>> " + tipo);
-						wQueue.put(zeroMQSourceConnectorConfig
-								.getConfiguredInstance("message_processor_class", ZeroMQMessageProcessor.class)
-								.process(topic, new ZeroMQMessage(topic, tipo)));
-						System.out.println("Fin >>> " + tipo);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
+					if (typeEvent.equalsIgnoreCase(LOCATION)) {
+						tipo = LOCATION;
+						location location = event.getLocation();
+						locationData.setX(location.getStaLocationX());
+						locationData.setY(location.getStaLocationY());
+						try {
+							ObjectMapper objectMapper = new ObjectMapper();
+							String json = objectMapper.writeValueAsString(locationData);
+							System.out.println(json);
 
+							System.out.println("Mando al topic el tipo >>> " + tipo);
+							wQueue.put(zeroMQSourceConnectorConfig
+									.getConfiguredInstance("message_processor_class", ZeroMQMessageProcessor.class)
+									.process(topic, new ZeroMQMessage(topic, json)));
+							System.out.println("Fin >>> " + tipo);
+						} catch (InterruptedException | JsonProcessingException e) {
+							e.printStackTrace();
+						}
+					}
 				}
 			}
 		}).start();
@@ -121,7 +116,7 @@ public class ZeroMQSourceTask extends SourceTask {
 //		subscriber.subscribe("toutiao".getBytes());
 
 		subscriber.connect("tcp://192.168.223.43:7779");
-		subscriber.subscribe("".getBytes());
+		subscriber.subscribe(LOCATION.getBytes());
 
 		startSubscriber();
 	}
